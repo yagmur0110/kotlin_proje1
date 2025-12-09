@@ -1,0 +1,144 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/inputNote"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Notunu yaz"
+        android:padding="12dp"/>
+
+    <Button
+        android:id="@+id/btnAdd"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ekle"
+        android:layout_marginTop="8dp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerNotes"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="12dp"/>
+
+</LinearLayout>
+
+===== item_note.xml =====
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/textNote"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:layout_weight="1"/>
+
+    <Button
+        android:id="@+id/btnDelete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sil"/>
+
+</LinearLayout>
+
+===== Note.kt =====
+package com.example.notesapp
+
+data class Note(
+    val text: String
+)
+
+===== NotesAdapter.kt =====
+package com.example.notesapp
+
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import com.example.notesapp.databinding.ItemNoteBinding
+
+class NotesAdapter(
+    private val notes: MutableList<Note>,
+    private val onDelete: (Note) -> Unit
+) : RecyclerView.Adapter<NotesAdapter.NoteViewHolder>() {
+
+    inner class NoteViewHolder(val binding: ItemNoteBinding) :
+        RecyclerView.ViewHolder(binding.root)
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NoteViewHolder {
+        val binding = ItemNoteBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return NoteViewHolder(binding)
+    }
+
+    override fun onBindViewHolder(holder: NoteViewHolder, position: Int) {
+        val note = notes[position]
+        holder.binding.textNote.text = note.text
+
+        holder.binding.btnDelete.setOnClickListener {
+            onDelete(note)
+        }
+    }
+
+    override fun getItemCount(): Int = notes.size
+}
+
+===== MainActivity.kt =====
+package com.example.notesapp
+
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.notesapp.databinding.ActivityMainBinding
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+    private val noteList = mutableListOf<Note>()
+    private lateinit var adapter: NotesAdapter
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        adapter = NotesAdapter(noteList) { note ->
+            noteList.remove(note)
+            adapter.notifyDataSetChanged()
+        }
+
+        binding.recyclerNotes.layoutManager = LinearLayoutManager(this)
+        binding.recyclerNotes.adapter = adapter
+
+        binding.btnAdd.setOnClickListener {
+            val text = binding.inputNote.text.toString()
+
+            if (text.isNotEmpty()) {
+                noteList.add(Note(text))
+                adapter.notifyDataSetChanged()
+                binding.inputNote.text.clear()
+            }
+        }
+    }
+}
+
+===== build.gradle (app) =====
+android {
+    buildFeatures {
+        viewBinding true
+    }
+}
