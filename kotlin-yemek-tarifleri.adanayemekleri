@@ -1,0 +1,87 @@
+package com.example.adanayemekleri
+
+import android.content.Intent
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import java.io.Serializable
+
+// 1. MODEL: Yemek verilerini tutan yapı
+data class Yemek(
+    val ad: String,
+    val malzemeler: String,
+    val tarif: String,
+    val gorselId: Int // R.drawable.yemek_adi şeklinde referans tutar
+) : Serializable
+
+// 2. MAIN ACTIVITY: Listenin görüntülendiği ana ekran
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // Adana Mutfağı Veri Seti
+        val adanaMutfagi = arrayListOf(
+            Yemek("Adana Kebap", "Zırh kıyması, kuyruk yağı, pul biber", "Kıyma ve yağ zırhla çekilir, şişe dizilip meşe kömüründe pişirilir.", R.drawable.adana_kebap),
+            Yemek("Şırdan Dolması", "Şırdan, pirinç, karabiber, kimyon", "Temizlenen şırdanlar baharatlı pirinçle doldurulur ve haşlanır.", R.drawable.sirdan),
+            Yemek("Analı Kızlı", "Bulgur, içli köfte hamuru, nohut, kuşbaşı et", "Büyük köfteler (analar) ve küçük köfteler (kızlar) salçalı suda pişirilir.", R.drawable.anali_kizli),
+            Yemek("Mumbar", "Koyun ince bağırsağı, pirinç, nane", "İç harç doldurulan bağırsaklar özenle temizlenip haşlanır.", R.drawable.mumbar),
+            Yemek("Bici Bici", "Nişasta, pudra şekeri, gül suyu, buz", "Pişirilen nişasta soğutulur, üzerine karlı buz ve şerbet eklenir.", R.drawable.bici_bici)
+        )
+
+        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = YemekAdapter(adanaMutfagi)
+    }
+}
+
+// 3. ADAPTER: Verileri liste elemanlarına (row) bağlayan köprü
+class YemekAdapter(private val yemekler: List<Yemek>) : RecyclerView.Adapter<YemekAdapter.YemekViewHolder>() {
+
+    class YemekViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val txtYemekAdi: TextView = view.findViewById(R.id.rowYemekAdi)
+        val imgYemek: ImageView = view.findViewById(R.id.rowImage)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): YemekViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.recycler_row, parent, false)
+        return YemekViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: YemekViewHolder, position: Int) {
+        val guncelYemek = yemekler[position]
+        holder.txtYemekAdi.text = guncelYemek.ad
+        holder.imgYemek.setImageResource(guncelYemek.gorselId)
+
+        holder.itemView.setOnClickListener {
+            val intent = Intent(it.context, DetayActivity::class.java)
+            intent.putExtra("secilenYemek", guncelYemek)
+            it.context.startActivity(intent)
+        }
+    }
+
+    override fun getItemCount(): Int = yemekler.size
+}
+
+// 4. DETAY ACTIVITY: Bir yemeğe tıklandığında açılan ekran
+class DetayActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_detay)
+
+        val yemek = intent.getSerializableExtra("secilenYemek") as? Yemek
+
+        yemek?.let {
+            findViewById<TextView>(R.id.detayBaslik).text = it.ad
+            findViewById<TextView>(R.id.detayMalzemeListesi).text = it.malzemeler
+            findViewById<TextView>(R.id.detayTarifMetni).text = it.tarif
+            findViewById<ImageView>(R.id.detayResim).setImageResource(it.gorselId)
+        }
+    }
+}
